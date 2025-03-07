@@ -1,13 +1,25 @@
 'use client'
 import './login.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useAuth from '@/store/useAuth'
 
 export default function LoginPage() {
-  const [errorMessage, setErrorMessage] = useState('')
-  const { login, isLoading } = useAuth()
   const router = useRouter()
+  const { user, isLoading, login } = useAuth()
+  const [errorMessage, setErrorMessage] = useState('')
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      router.replace('/dashboard')
+    }
+  }, [user, router])
+
+  // Show loading or redirect states
+  if (isLoading || user) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

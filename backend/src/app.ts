@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import tenantRoutes from './routes/tenant.routes';
+import buildingRoutes from './routes/building.routes';
 import { initializeDatabase } from './config/database';
 import path from 'path';
 
@@ -30,6 +31,7 @@ const createApp = async () => {
   expressApp.use('/api/auth', authRoutes);
   expressApp.use('/api/users', userRoutes);
   expressApp.use('/api/tenants', tenantRoutes);
+  expressApp.use('/api/buildings', buildingRoutes);
 
   // Error handling
   expressApp.use(errorHandler);

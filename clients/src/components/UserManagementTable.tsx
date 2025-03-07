@@ -1,12 +1,15 @@
 'use client';
 
 import { User } from '@/types/auth';
+import { useState } from 'react';
+import UserForm from './UserForm';
 
 interface UserManagementTableProps {
   users: User[];
   onEdit: (user: User) => void;
   onDelete: (userId: number) => void;
   onToggleStatus: (userId: number, isActive: boolean) => void;
+  onAddUser: (userData: Partial<User> & { password: string }) => void;
 }
 
 export default function UserManagementTable({
@@ -14,10 +17,49 @@ export default function UserManagementTable({
   onEdit,
   onDelete,
   onToggleStatus,
+  onAddUser,
 }: UserManagementTableProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = (userData: Partial<User> & { password?: string }) => {
+    if (editingUser) {
+      onEdit({ ...editingUser, ...userData });
+    } else {
+      onAddUser(userData as Partial<User> & { password: string });
+    }
+    setEditingUser(undefined);
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div>
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => {
+            setEditingUser(undefined);
+            setIsModalOpen(true);
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          เพิ่มผู้ใช้ใหม่
+        </button>
+      </div>
+      <UserForm
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingUser(undefined);
+        }}
+        onSubmit={handleSubmit}
+        initialData={editingUser}
+      />
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -75,7 +117,7 @@ export default function UserManagementTable({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                 <button
-                  onClick={() => onEdit(user)}
+                  onClick={() => handleEdit(user)}
                   className="text-blue-600 hover:text-blue-900"
                 >
                   แก้ไข
@@ -91,6 +133,7 @@ export default function UserManagementTable({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

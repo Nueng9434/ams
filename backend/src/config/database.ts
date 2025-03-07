@@ -1,22 +1,27 @@
 import { DataSource } from 'typeorm';
 import { User } from '../models/user.model';
+import { Tenant } from '../models/tenant.model';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
-export const AppDataSource = new DataSource({
+const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 3306,
   username: process.env.DB_USERNAME || 'root',
   password: process.env.DB_PASSWORD || '1235',
   database: process.env.DB_DATABASE || 'ams',
-  synchronize: process.env.NODE_ENV === 'development', // Auto-create tables in development
+  synchronize: false, // Disable auto-sync to use migrations
   logging: process.env.NODE_ENV === 'development',
-  entities: [User],
-  migrations: [],
+  entities: [User, Tenant],
+  migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
+  migrationsRun: true, // Automatically run migrations
   subscribers: [],
 });
+
+export { AppDataSource };
 
 export const initializeDatabase = async () => {
   try {

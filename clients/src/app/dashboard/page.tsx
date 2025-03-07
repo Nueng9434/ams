@@ -1,66 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useAuth from '@/store/useAuth'
 import Link from 'next/link'
-import UserManagementTable from '@/components/UserManagementTable'
-import api from '@/services/api'
-import { User } from '@/types/auth'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
   const router = useRouter()
-  const [users, setUsers] = useState<User[]>([])
-
-  const fetchUsers = useCallback(async () => {
-    if (user?.role === 'admin') {
-      try {
-        const response = await api.get('/users/list')
-        setUsers(response.data.data.users)
-      } catch (error) {
-        console.error('Failed to fetch users:', error)
-      }
-    }
-  }, [user?.role])
-
-  useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
-
-  const handleEdit = async (userToEdit: User) => {
-    // Implement edit logic
-    try {
-      const response = await api.put(`/users/${userToEdit.id}`, userToEdit)
-      if (response.data.status === 'success') {
-        fetchUsers()
-      }
-    } catch (error) {
-      console.error('Failed to update user:', error)
-    }
-  }
-
-  const handleDelete = async (userId: number) => {
-    try {
-      const response = await api.delete(`/users/${userId}`)
-      if (response.data.status === 'success') {
-        fetchUsers()
-      }
-    } catch (error) {
-      console.error('Failed to delete user:', error)
-    }
-  }
-
-  const handleToggleStatus = async (userId: number, isActive: boolean) => {
-    try {
-      const response = await api.put(`/users/${userId}`, { isActive })
-      if (response.data.status === 'success') {
-        fetchUsers()
-      }
-    } catch (error) {
-      console.error('Failed to toggle user status:', error)
-    }
-  }
 
   const handleLogout = () => {
     logout()
@@ -98,22 +44,15 @@ export default function DashboardPage() {
         {user?.role === 'admin' ? (
           // Admin View
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-700">จัดการผู้ใช้</h2>
-                <Link 
-                  href="/dashboard/users/create"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  เพิ่มผู้ใช้ใหม่
-                </Link>
-              </div>
-              <UserManagementTable 
-                users={users}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onToggleStatus={handleToggleStatus}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link 
+                href="/dashboard/users"
+                className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+              >
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">จัดการผู้ใช้</h2>
+                <p className="text-gray-600">จัดการข้อมูลผู้ใช้งานในระบบ</p>
+              </Link>
+              {/* Add more dashboard cards here */}
             </div>
           </div>
         ) : (

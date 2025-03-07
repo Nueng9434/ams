@@ -35,7 +35,14 @@ export const TenantForm: React.FC<TenantFormProps> = ({
     const [loading, setLoading] = useState(false);
     const [tenantTypeSelected, setTenantTypeSelected] = useState(false);
     const [tenantType, setTenantType] = useState<'R' | 'C' | null>(null);
-    const [showTypeModal, setShowTypeModal] = useState(!initialData);
+    const [showTypeModal, setShowTypeModal] = useState(initialData ? false : visible);
+
+    // Effect to handle modal visibility when form opens
+    React.useEffect(() => {
+        if (visible && !initialData) {
+            setShowTypeModal(true);
+        }
+    }, [visible, initialData]);
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,11 +115,15 @@ export const TenantForm: React.FC<TenantFormProps> = ({
         <>
             <Modal
                 title="Select Tenant Type"
-                open={showTypeModal}
+                open={visible && showTypeModal}
                 footer={null}
-                closable={false}
+                closable={true}
+                onCancel={() => {
+                    setShowTypeModal(false);
+                    onClose();
+                }}
             >
-                <div className="flex justify-center gap-4">
+                <div className="flex justify-center gap-4 mb-4">
                     <Button onClick={() => handleTenantTypeSelect('R')}>
                         Reservation
                     </Button>

@@ -3,6 +3,7 @@ import './globals.css'
 import { getFont } from '@/utils/fonts'
 import themeConfig from '@/config/theme'
 import AuthProvider from '@/components/providers/AuthProvider'
+import { Toaster } from 'react-hot-toast'
 
 const font = getFont(themeConfig.font);
 
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="th">
       <body className={font.className}>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster position="top-right" />
       </body>
     </html>
   )

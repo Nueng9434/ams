@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Add paths that don't require authentication
-const publicPaths = ['/login']
+const publicPaths = ['/login', '/']
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value

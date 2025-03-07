@@ -46,11 +46,13 @@ export const TenantForm: React.FC<TenantFormProps> = ({
             form.resetFields();
             setTenantType(null);
             setProfileImage(null);
+            setTenantTypeSelected(false);
 
             // Then set initial data if editing
             if (initialData) {
                 form.setFieldsValue(initialData);
                 setTenantType(initialData.tenantType);
+                setTenantTypeSelected(true);
             } else {
                 setShowTypeModal(true);
             }
@@ -62,6 +64,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
         form.resetFields();
         setTenantType(null);
         setProfileImage(null);
+        setTenantTypeSelected(false);
         onClose();
     };
 
@@ -115,16 +118,16 @@ export const TenantForm: React.FC<TenantFormProps> = ({
 
             if (initialData?.id) {
                 await tenantService.update(initialData.id, formData);
+                message.success('แก้ไขข้อมูลผู้เช่าสำเร็จ');
             } else {
                 await tenantService.create(formData);
+                message.success('เพิ่มผู้เช่าสำเร็จ');
             }
-
-            message.success(`Tenant ${initialData ? 'updated' : 'created'} successfully`);
             onSuccess();
             handleClose();
         } catch (error) {
             console.error('Error submitting form:', error);
-            message.error('Error saving tenant');
+            message.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         } finally {
             setLoading(false);
         }
@@ -133,31 +136,38 @@ export const TenantForm: React.FC<TenantFormProps> = ({
     return (
         <>
             <Modal
-                title="Select Tenant Type"
+                title="เลือกประเภทผู้เช่า"
                 open={visible && showTypeModal}
                 footer={null}
                 closable={true}
+                maskClosable={false}
                 onCancel={() => {
-                    setShowTypeModal(false);
-                    handleClose();
+                    if (!tenantTypeSelected) {
+                        handleClose();
+                    } else {
+                        setShowTypeModal(false);
+                    }
                 }}
             >
                 <div className="flex justify-center gap-4 mb-4">
                     <Button onClick={() => handleTenantTypeSelect('R')}>
-                        Reservation
+                        จองห้องพัก
                     </Button>
                     <Button onClick={() => handleTenantTypeSelect('C')}>
-                        Contract
+                        ทำสัญญา
                     </Button>
                 </div>
             </Modal>
 
             <Modal
-                title={`${initialData ? 'Edit' : 'Add'} Tenant`}
+                title={`${initialData ? 'แก้ไขผู้เช่า' : 'เพิ่มผู้เช่า'}`}
                 open={visible && !showTypeModal}
                 onCancel={handleClose}
                 onOk={handleSubmit}
+                okText="บันทึก"
+                cancelText="ยกเลิก"
                 confirmLoading={loading}
+                maskClosable={false}
                 width={700}
             >
                 <Form
@@ -196,8 +206,8 @@ export const TenantForm: React.FC<TenantFormProps> = ({
 
                         <Form.Item
                             name="title"
-                            label="Title"
-                            rules={[{ required: true, message: 'Please select title' }]}
+                            label="คำนำหน้า"
+                            rules={[{ required: true, message: 'กรุณาเลือกคำนำหน้า' }]}
                         >
                             <Select>
                                 <Option value="นาย">นาย</Option>
@@ -208,33 +218,33 @@ export const TenantForm: React.FC<TenantFormProps> = ({
 
                         <Form.Item
                             name="fullName"
-                            label="Full Name"
-                            rules={[{ required: true, message: 'Please enter full name' }]}
+                            label="ชื่อ-นามสกุล"
+                            rules={[{ required: true, message: 'กรุณากรอกชื่อ-นามสกุล' }]}
                         >
                             <Input />
                         </Form.Item>
 
                         <Form.Item
                             name="phoneNumber"
-                            label="Phone Number"
-                            rules={[{ required: true, message: 'Please enter phone number' }]}
+                            label="เบอร์โทรศัพท์"
+                            rules={[{ required: true, message: 'กรุณากรอกเบอร์โทรศัพท์' }]}
                         >
                             <Input />
                         </Form.Item>
 
                         <Form.Item
                             name="idCardNumber"
-                            label="ID Card Number"
-                            rules={[{ required: true, message: 'Please enter ID card number' }]}
+                            label="เลขบัตรประชาชน"
+                            rules={[{ required: true, message: 'กรุณากรอกเลขบัตรประชาชน' }]}
                         >
                             <Input />
                         </Form.Item>
 
                         <Form.Item
                             name="address"
-                            label="Address"
+                            label="ที่อยู่"
                             className="col-span-2"
-                            rules={[{ required: true, message: 'Please enter address' }]}
+                            rules={[{ required: true, message: 'กรุณากรอกที่อยู่' }]}
                         >
                             <TextArea rows={4} />
                         </Form.Item>
@@ -242,17 +252,17 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                         {(tenantType === 'C' || initialData?.tenantType === 'C') && (
                                 <Form.Item
                                     name="document"
-                                    label="Document"
+                                    label="เอกสารสัญญา"
                                     className="col-span-2"
                                 >
                                     {initialData?.documentPath ? (
                                         <div>
-                                            <p className="mb-2">Current document: {initialData.documentPath.split('/').pop()}</p>
+                                            <p className="mb-2">เอกสารปัจจุบัน: {initialData.documentPath.split('/').pop()}</p>
                                             <Button 
                                                 icon={<UploadOutlined />}
                                                 onClick={() => initialData?.id && tenantService.downloadDocument(initialData.id)}
                                             >
-                                                Download Document
+                                                ดาวน์โหลดเอกสาร
                                             </Button>
                                         </div>
                                     ) : (
@@ -265,7 +275,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                                                 form.setFieldValue('document', info.fileList);
                                             }}
                                         >
-                                            <Button icon={<UploadOutlined />}>Upload Document</Button>
+                                            <Button icon={<UploadOutlined />}>อัปโหลดเอกสาร</Button>
                                         </Upload>
                                     )}
                                 </Form.Item>
@@ -275,16 +285,16 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                             <>
                                 <Form.Item
                                     name="reservationStartDate"
-                                    label="Reservation Start Date"
-                                    rules={[{ required: true, message: 'Please select start date' }]}
+                                    label="วันที่เริ่มจอง"
+                                    rules={[{ required: true, message: 'กรุณาเลือกวันที่เริ่มจอง' }]}
                                 >
                                     <DatePicker className="w-full" />
                                 </Form.Item>
 
                                 <Form.Item
                                     name="reservationEndDate"
-                                    label="Reservation End Date"
-                                    rules={[{ required: true, message: 'Please select end date' }]}
+                                    label="วันที่สิ้นสุด"
+                                    rules={[{ required: true, message: 'กรุณาเลือกวันที่สิ้นสุด' }]}
                                 >
                                     <DatePicker className="w-full" />
                                 </Form.Item>

@@ -23,7 +23,7 @@ export const TenantTable: React.FC = () => {
             setTenants(data);
         } catch (error) {
             console.error('Error fetching tenants:', error);
-            message.error('Error fetching tenants');
+            message.error('เกิดข้อผิดพลาดในการดึงข้อมูล');
         } finally {
             setLoading(false);
         }
@@ -42,27 +42,27 @@ export const TenantTable: React.FC = () => {
             }
         } catch (error) {
             console.error('Error fetching tenant details:', error);
-            message.error('Error loading tenant details');
+            message.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
         }
     };
 
     const handleDelete = (tenant: TenantType) => {
         Modal.confirm({
-            title: 'Confirm Delete',
-            content: `Are you sure you want to delete ${tenant.fullName}?`,
-            okText: 'Yes',
+            title: 'ยืนยันการลบ',
+            content: `คุณต้องการลบข้อมูลของ ${tenant.fullName} ใช่หรือไม่?`,
+            okText: 'ใช่',
             okType: 'danger',
-            cancelText: 'No',
+            cancelText: 'ไม่',
             onOk: async () => {
                 try {
                     if (tenant.id) {
                         await tenantService.delete(tenant.id);
-                        message.success('Tenant deleted successfully');
+                        message.success('ลบข้อมูลสำเร็จ');
                         fetchTenants();
                     }
                 } catch (error) {
                     console.error('Error deleting tenant:', error);
-                    message.error('Error deleting tenant');
+                    message.error('เกิดข้อผิดพลาดในการลบข้อมูล');
                 }
             },
         });
@@ -70,21 +70,21 @@ export const TenantTable: React.FC = () => {
 
     const handleCancelReservation = (tenant: TenantType) => {
         Modal.confirm({
-            title: 'Cancel Reservation',
-            content: `Are you sure you want to cancel the reservation for ${tenant.fullName}?`,
-            okText: 'Yes',
+            title: 'ยกเลิกการจอง',
+            content: `คุณต้องการยกเลิกการจองของ ${tenant.fullName} ใช่หรือไม่?`,
+            okText: 'ใช่',
             okType: 'danger',
-            cancelText: 'No',
+            cancelText: 'ไม่',
             onOk: async () => {
                 try {
                     if (tenant.id) {
                         await tenantService.cancelReservation(tenant.id);
-                        message.success('Reservation cancelled successfully');
+                        message.success('ยกเลิกการจองสำเร็จ');
                         fetchTenants();
                     }
                 } catch (error) {
                     console.error('Error cancelling reservation:', error);
-                    message.error('Error cancelling reservation');
+                    message.error('เกิดข้อผิดพลาดในการยกเลิกการจอง');
                 }
             },
         });
@@ -106,13 +106,13 @@ export const TenantTable: React.FC = () => {
             }
 
             await tenantService.convertToContract(selectedTenant.id, formData);
-            message.success('Successfully converted to contract');
+            message.success('แปลงเป็นสัญญาสำเร็จ');
             setConvertToContractVisible(false);
             convertFormData.resetFields();
             fetchTenants();
         } catch (error) {
             console.error('Error converting to contract:', error);
-            message.error('Error converting to contract');
+            message.error('เกิดข้อผิดพลาดในการแปลงเป็นสัญญา');
         }
     };
 
@@ -123,13 +123,13 @@ export const TenantTable: React.FC = () => {
             }
         } catch (error) {
             console.error('Error downloading document:', error);
-            message.error('Error downloading document');
+            message.error('เกิดข้อผิดพลาดในการดาวน์โหลดเอกสาร');
         }
     };
 
     const columns: ColumnsType<TenantType> = [
         {
-            title: 'Profile',
+            title: 'รูปโปรไฟล์',
             dataIndex: 'profileImage',
             key: 'profileImage',
             width: 80,
@@ -148,34 +148,34 @@ export const TenantTable: React.FC = () => {
             )
         },
         {
-            title: 'Name',
+            title: 'ชื่อ-นามสกุล',
             key: 'name',
             render: (_, record) => `${record.title} ${record.fullName}`
         },
         {
-            title: 'Phone',
+            title: 'เบอร์โทรศัพท์',
             dataIndex: 'phoneNumber',
             key: 'phoneNumber',
         },
         {
-            title: 'Type',
+            title: 'ประเภท',
             dataIndex: 'tenantType',
             key: 'tenantType',
             render: (type: 'R' | 'C') => (
                 <Tag color={type === 'R' ? 'blue' : 'green'}>
-                    {type === 'R' ? 'Reservation' : 'Contract'}
+                    {type === 'R' ? 'จองห้องพัก' : 'ทำสัญญา'}
                 </Tag>
             ),
         },
         {
-            title: 'Reservation Dates',
+            title: 'ระยะเวลาการจอง',
             key: 'reservationDates',
             render: (_, record) => {
                 if (record.tenantType === 'R' && record.reservationStartDate && record.reservationEndDate) {
                     return (
                         <div className="text-sm">
                             <div>{dayjs(record.reservationStartDate).format('DD/MM/YYYY')}</div>
-                            <div>to</div>
+                            <div>ถึง</div>
                             <div>{dayjs(record.reservationEndDate).format('DD/MM/YYYY')}</div>
                         </div>
                     );
@@ -184,7 +184,7 @@ export const TenantTable: React.FC = () => {
             },
         },
         {
-            title: 'Actions',
+            title: 'จัดการ',
             key: 'actions',
             render: (_, record) => (
                 <Space wrap>
@@ -204,13 +204,13 @@ export const TenantTable: React.FC = () => {
                                 onClick={() => handleMakeContract(record)}
                                 type="primary"
                             >
-                                Make Contract
+                                ทำสัญญา
                             </Button>
                             <Button
                                 onClick={() => handleCancelReservation(record)}
                                 danger
                             >
-                                Cancel Reservation
+                                ยกเลิกการจอง
                             </Button>
                         </>
                     )}
@@ -227,7 +227,7 @@ export const TenantTable: React.FC = () => {
     return (
         <div className="p-6">
             <div className="mb-4 flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">Tenant Management</h1>
+                <h1 className="text-2xl font-semibold">จัดการผู้เช่า</h1>
                 <Button
                     type="primary"
                     onClick={() => {
@@ -235,7 +235,7 @@ export const TenantTable: React.FC = () => {
                         setFormVisible(true);
                     }}
                 >
-                    Add Tenant
+                    เพิ่มผู้เช่า
                 </Button>
             </div>
 
@@ -261,19 +261,22 @@ export const TenantTable: React.FC = () => {
             />
 
             <Modal
-                title="Convert to Contract"
+                title="แปลงเป็นสัญญา"
                 open={convertToContractVisible}
                 onOk={handleConvertToContract}
                 onCancel={() => {
                     setConvertToContractVisible(false);
                     convertFormData.resetFields();
                 }}
+                okText="บันทึก"
+                cancelText="ยกเลิก"
+                maskClosable={false}
             >
                 <Form form={convertFormData} layout="vertical">
                     <Form.Item
                         name="document"
-                        label="Contract Document"
-                        rules={[{ required: true, message: 'Please upload contract document' }]}
+                        label="เอกสารสัญญา"
+                        rules={[{ required: true, message: 'กรุณาอัปโหลดเอกสารสัญญา' }]}
                         valuePropName="fileList"
                         getValueFromEvent={(e: UploadChangeParam) => {
                             if (Array.isArray(e)) return e;
@@ -281,7 +284,7 @@ export const TenantTable: React.FC = () => {
                         }}
                     >
                         <Upload maxCount={1} beforeUpload={() => false} accept=".doc,.docx">
-                            <Button icon={<UploadOutlined />}>Upload Contract</Button>
+                            <Button icon={<UploadOutlined />}>อัปโหลดเอกสารสัญญา</Button>
                         </Upload>
                     </Form.Item>
                 </Form>

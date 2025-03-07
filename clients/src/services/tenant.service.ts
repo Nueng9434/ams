@@ -49,6 +49,19 @@ export const tenantService = {
         await api.delete(`/tenants/${id}`);
     },
 
+    cancelReservation: async (id: number) => {
+        await api.post(`/tenants/${id}/cancel-reservation`);
+    },
+
+    convertToContract: async (id: number, data: FormData) => {
+        const response = await api.post(`/tenants/${id}/convert-to-contract`, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
     downloadDocument: async (id: number) => {
         const response = await api.get(`/tenants/${id}/document`, {
             responseType: 'blob'

@@ -36,15 +36,34 @@ export const TenantForm: React.FC<TenantFormProps> = ({
     const [tenantTypeSelected, setTenantTypeSelected] = useState(false);
     const [tenantType, setTenantType] = useState<'R' | 'C' | null>(null);
     const [showTypeModal, setShowTypeModal] = useState(initialData ? false : visible);
-
-    // Effect to handle modal visibility when form opens
-    React.useEffect(() => {
-        if (visible && !initialData) {
-            setShowTypeModal(true);
-        }
-    }, [visible, initialData]);
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Effect to handle form data when modal opens
+    React.useEffect(() => {
+        if (visible) {
+            // Clear form first
+            form.resetFields();
+            setTenantType(null);
+            setProfileImage(null);
+
+            // Then set initial data if editing
+            if (initialData) {
+                form.setFieldsValue(initialData);
+                setTenantType(initialData.tenantType);
+            } else {
+                setShowTypeModal(true);
+            }
+        }
+    }, [visible, initialData, form]);
+
+    // Reset form when modal is closed
+    const handleClose = () => {
+        form.resetFields();
+        setTenantType(null);
+        setProfileImage(null);
+        onClose();
+    };
 
     const handleTenantTypeSelect = (type: 'R' | 'C') => {
         setTenantType(type);
@@ -102,7 +121,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
 
             message.success(`Tenant ${initialData ? 'updated' : 'created'} successfully`);
             onSuccess();
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error submitting form:', error);
             message.error('Error saving tenant');
@@ -120,7 +139,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                 closable={true}
                 onCancel={() => {
                     setShowTypeModal(false);
-                    onClose();
+                    handleClose();
                 }}
             >
                 <div className="flex justify-center gap-4 mb-4">
@@ -136,7 +155,7 @@ export const TenantForm: React.FC<TenantFormProps> = ({
             <Modal
                 title={`${initialData ? 'Edit' : 'Add'} Tenant`}
                 open={visible && !showTypeModal}
-                onCancel={onClose}
+                onCancel={handleClose}
                 onOk={handleSubmit}
                 confirmLoading={loading}
                 width={700}
@@ -144,7 +163,6 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                 <Form
                     form={form}
                     layout="vertical"
-                    initialValues={initialData}
                 >
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
@@ -221,23 +239,37 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                             <TextArea rows={4} />
                         </Form.Item>
 
-                        <Form.Item
-                            name="document"
-                            label="Document"
-                            valuePropName="fileList"
-                            getValueFromEvent={(e) => {
-                                if (Array.isArray(e)) return e;
-                                return e?.fileList;
-                            }}
-                        >
-                            <Upload 
-                                accept=".doc,.docx"
-                                maxCount={1}
-                                beforeUpload={() => false}
-                            >
-                                <Button icon={<UploadOutlined />}>Upload Document</Button>
-                            </Upload>
-                        </Form.Item>
+                        {(tenantType === 'C' || initialData?.tenantType === 'C') && (
+                                <Form.Item
+                                    name="document"
+                                    label="Document"
+                                    className="col-span-2"
+                                >
+                                    {initialData?.documentPath ? (
+                                        <div>
+                                            <p className="mb-2">Current document: {initialData.documentPath.split('/').pop()}</p>
+                                            <Button 
+                                                icon={<UploadOutlined />}
+                                                onClick={() => initialData?.id && tenantService.downloadDocument(initialData.id)}
+                                            >
+                                                Download Document
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Upload
+                                            accept=".doc,.docx"
+                                            maxCount={1}
+                                            beforeUpload={() => false}
+                                            fileList={form.getFieldValue('document')}
+                                            onChange={(info: any) => {
+                                                form.setFieldValue('document', info.fileList);
+                                            }}
+                                        >
+                                            <Button icon={<UploadOutlined />}>Upload Document</Button>
+                                        </Upload>
+                                    )}
+                                </Form.Item>
+                        )}
 
                         {(tenantType === 'R' || initialData?.tenantType === 'R') && (
                             <>

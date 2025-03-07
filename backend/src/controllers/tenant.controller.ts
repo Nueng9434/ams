@@ -147,6 +147,36 @@ private async saveDocument(file: any): Promise<string> {
         }
     }
 
+    async convertToContract(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const tenant = await this.tenantRepository.findOne({ where: { id: parseInt(id) } });
+            
+            if (!tenant) {
+                return res.status(404).json({ message: "Tenant not found" });
+            }
+
+            if ((req as any).file) {
+                // Delete old document if exists
+                if (tenant.documentPath) {
+                    const oldPath = path.join(this.uploadDir, tenant.documentPath);
+                    if (fs.existsSync(oldPath)) {
+                        await fs.promises.unlink(oldPath);
+                    }
+                }
+                tenant.documentPath = await this.saveDocument((req as any).file);
+            }
+
+            // Update tenant type to Contract
+            tenant.tenantType = 'C';
+            
+            const updatedTenant = await this.tenantRepository.save(tenant);
+            res.json(updatedTenant);
+        } catch (error) {
+            res.status(400).json({ message: "Error converting tenant to contract", error });
+        }
+    }
+
     async getDocument(req: Request, res: Response) {
         try {
             const { id } = req.params;

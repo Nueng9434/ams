@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, message, Tag } from 'antd';
+import { Table, Button, Space, Modal, message, Tag, Upload, Form } from 'antd';
+import type { UploadChangeParam } from 'antd/es/upload';
 import type { ColumnsType } from 'antd/es/table';
-import { EditOutlined, DeleteOutlined, FileOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, FileOutlined, UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { tenantService, TenantType } from '@/services/tenant.service';
 import { TenantForm } from './TenantForm';
@@ -12,6 +13,8 @@ export const TenantTable: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [formVisible, setFormVisible] = useState(false);
     const [selectedTenant, setSelectedTenant] = useState<TenantType | undefined>();
+    const [convertToContractVisible, setConvertToContractVisible] = useState(false);
+    const [convertFormData] = Form.useForm();
 
     const fetchTenants = async () => {
         try {
@@ -30,9 +33,17 @@ export const TenantTable: React.FC = () => {
         fetchTenants();
     }, []);
 
-    const handleEdit = (tenant: TenantType) => {
-        setSelectedTenant(tenant);
-        setFormVisible(true);
+    const handleEdit = async (tenant: TenantType) => {
+        try {
+            if (tenant.id) {
+                const updatedTenant = await tenantService.getById(tenant.id);
+                setSelectedTenant(updatedTenant);
+                setFormVisible(true);
+            }
+        } catch (error) {
+            console.error('Error fetching tenant details:', error);
+            message.error('Error loading tenant details');
+        }
     };
 
     const handleDelete = (tenant: TenantType) => {
@@ -55,6 +66,54 @@ export const TenantTable: React.FC = () => {
                 }
             },
         });
+    };
+
+    const handleCancelReservation = (tenant: TenantType) => {
+        Modal.confirm({
+            title: 'Cancel Reservation',
+            content: `Are you sure you want to cancel the reservation for ${tenant.fullName}?`,
+            okText: 'Yes',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: async () => {
+                try {
+                    if (tenant.id) {
+                        await tenantService.cancelReservation(tenant.id);
+                        message.success('Reservation cancelled successfully');
+                        fetchTenants();
+                    }
+                } catch (error) {
+                    console.error('Error cancelling reservation:', error);
+                    message.error('Error cancelling reservation');
+                }
+            },
+        });
+    };
+
+    const handleMakeContract = (tenant: TenantType) => {
+        setSelectedTenant(tenant);
+        setConvertToContractVisible(true);
+    };
+
+    const handleConvertToContract = async () => {
+        try {
+            const values = await convertFormData.validateFields();
+            if (!selectedTenant?.id) return;
+
+            const formData = new FormData();
+            if (values.document?.[0]?.originFileObj) {
+                formData.append('document', values.document[0].originFileObj);
+            }
+
+            await tenantService.convertToContract(selectedTenant.id, formData);
+            message.success('Successfully converted to contract');
+            setConvertToContractVisible(false);
+            convertFormData.resetFields();
+            fetchTenants();
+        } catch (error) {
+            console.error('Error converting to contract:', error);
+            message.error('Error converting to contract');
+        }
     };
 
     const handleDownloadDocument = async (tenant: TenantType) => {
@@ -128,7 +187,7 @@ export const TenantTable: React.FC = () => {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => (
-                <Space>
+                <Space wrap>
                     <Button 
                         icon={<EditOutlined />} 
                         onClick={() => handleEdit(record)}
@@ -138,6 +197,22 @@ export const TenantTable: React.FC = () => {
                             icon={<FileOutlined />}
                             onClick={() => handleDownloadDocument(record)}
                         />
+                    )}
+                    {record.tenantType === 'R' && (
+                        <>
+                            <Button
+                                onClick={() => handleMakeContract(record)}
+                                type="primary"
+                            >
+                                Make Contract
+                            </Button>
+                            <Button
+                                onClick={() => handleCancelReservation(record)}
+                                danger
+                            >
+                                Cancel Reservation
+                            </Button>
+                        </>
                     )}
                     <Button 
                         icon={<DeleteOutlined />} 
@@ -184,6 +259,33 @@ export const TenantTable: React.FC = () => {
                 }}
                 initialData={selectedTenant}
             />
+
+            <Modal
+                title="Convert to Contract"
+                open={convertToContractVisible}
+                onOk={handleConvertToContract}
+                onCancel={() => {
+                    setConvertToContractVisible(false);
+                    convertFormData.resetFields();
+                }}
+            >
+                <Form form={convertFormData} layout="vertical">
+                    <Form.Item
+                        name="document"
+                        label="Contract Document"
+                        rules={[{ required: true, message: 'Please upload contract document' }]}
+                        valuePropName="fileList"
+                        getValueFromEvent={(e: UploadChangeParam) => {
+                            if (Array.isArray(e)) return e;
+                            return e?.fileList;
+                        }}
+                    >
+                        <Upload maxCount={1} beforeUpload={() => false} accept=".doc,.docx">
+                            <Button icon={<UploadOutlined />}>Upload Contract</Button>
+                        </Upload>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
 };

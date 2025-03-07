@@ -7,7 +7,7 @@ const router = Router();
 const storage = multer.memoryStorage();
 const upload = multer({
     storage,
-    fileFilter: (req, file, cb) => {
+    fileFilter: (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
         if (file.fieldname === 'document') {
             // Allow only .doc files
             if (file.mimetype === 'application/msword' || 
@@ -82,5 +82,16 @@ router.get("/:id/document", (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: "Internal server error" });
     });
 });
+
+// Convert tenant to contract
+router.post("/:id/convert-to-contract", 
+    upload.single('document'),
+    (req: AuthRequest, res: Response) => {
+        controller.convertToContract(req, res).catch(err => {
+            console.error('Error converting to contract:', err);
+            res.status(500).json({ message: "Internal server error" });
+        });
+    }
+);
 
 export default router;

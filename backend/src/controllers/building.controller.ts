@@ -1,59 +1,110 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../config/database";
-import { Building } from "../models/building.model";
+
+interface RoomData {
+    room_number: string;
+    building_name: string;
+    tenants: string | null;
+    status: 'available' | 'occupied' | 'maintenance';
+}
+
+interface BuildingData {
+    building_name: string;
+    start_room: string;
+    end_room: string;
+}
 
 export const getAllBuildings = async (req: Request, res: Response) => {
     try {
-        const buildingRepository = AppDataSource.getRepository(Building);
-        const buildings = await buildingRepository.find();
-        
-        // Calculate tenant count for each building
-        const buildingsWithCounts = buildings.map(building => ({
-            ...building,
-            tenantCount: 0, // TODO: Implement actual tenant count calculation
-        }));
+        // Get all unique building names and get one room to represent each building
+        const buildings = await AppDataSource.query<BuildingData[]>(`
+            SELECT DISTINCT building_name,
+                MIN(room_number) as start_room,
+                MAX(room_number) as end_room
+            FROM buildings
+            GROUP BY building_name
+            ORDER BY building_name
+        `);
 
-        res.json(buildingsWithCounts);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching buildings", error });
+        // Get rooms for each building
+        const buildingsWithRooms = await Promise.all(buildings.map(async (building) => {
+            const rooms = await AppDataSource.query<RoomData[]>(
+                `SELECT room_number, building_name, tenants, status
+                FROM buildings 
+                WHERE building_name = ?
+                ORDER BY room_number`,
+                [building.building_name]
+            );
+
+            return {
+                id: building.building_name, // Using building_name as id since that's what we use to identify buildings
+                name: building.building_name,
+                startRoom: building.start_room,
+                endRoom: building.end_room,
+                rooms: rooms.map(room => ({
+                    roomNumber: room.room_number,
+                    buildingName: room.building_name,
+                    isOccupied: !!room.tenants,
+                    status: room.status
+                })),
+                tenantCount: rooms.filter(room => !!room.tenants).length
+            };
+        }));
+        
+        res.json(buildingsWithRooms);
+    } catch (error: unknown) {
+        console.error('Error in getAllBuildings:', error);
+        res.status(500).json({ 
+            message: "Error fetching buildings", 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+        });
     }
 };
 
 export const getBuildingById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const buildingRepository = AppDataSource.getRepository(Building);
-        const building = await buildingRepository.findOne({ where: { id } });
+        
+        // Get building details by name
+        const building = await AppDataSource.query<BuildingData[]>(`
+            SELECT DISTINCT building_name,
+                MIN(room_number) as start_room,
+                MAX(room_number) as end_room
+            FROM buildings
+            WHERE building_name = ?
+            GROUP BY building_name
+        `, [id]);
 
-        if (!building) {
+        if (!building || building.length === 0) {
             return res.status(404).json({ message: "Building not found" });
         }
 
-        // Generate room numbers sequence
-        const startRoom = parseInt(building.startRoom);
-        const endRoom = parseInt(building.endRoom);
-        const rooms = [];
-
-        for (let floor = Math.floor(startRoom/100); floor >= Math.floor(endRoom/100); floor--) {
-            const floorRooms = [];
-            const startUnit = floor === Math.floor(startRoom/100) ? startRoom % 100 : 25;
-            const endUnit = floor === Math.floor(endRoom/100) ? endRoom % 100 : 1;
-            
-            for (let unit = startUnit; unit >= endUnit; unit--) {
-                floorRooms.push({
-                    roomNumber: `${floor}${unit.toString().padStart(2, '0')}`,
-                    isOccupied: false, // TODO: Implement actual occupancy check
-                });
-            }
-            rooms.push(floorRooms);
-        }
+        const rooms = await AppDataSource.query<RoomData[]>(
+            `SELECT room_number, building_name, tenants, status
+            FROM buildings 
+            WHERE building_name = ?
+            ORDER BY room_number`,
+            [id]
+        );
 
         res.json({
-            ...building,
-            rooms,
-            tenantCount: 0, // TODO: Implement actual tenant count
+            id: building[0].building_name, // Using building_name as id
+            name: building[0].building_name,
+            startRoom: building[0].start_room,
+            endRoom: building[0].end_room,
+            rooms: rooms.map(room => ({
+                roomNumber: room.room_number,
+                buildingName: room.building_name,
+                isOccupied: !!room.tenants,
+                status: room.status
+            })),
+            tenantCount: rooms.filter(room => !!room.tenants).length
         });
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching building details", error });
+    } catch (error: unknown) {
+        console.error('Error in getBuildingById:', error);
+        res.status(500).json({ 
+            message: "Error fetching building details", 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+        });
     }
 };

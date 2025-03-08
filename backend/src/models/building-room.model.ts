@@ -1,9 +1,9 @@
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity("buildings")
-export class Building {
-    @PrimaryGeneratedColumn("increment")
-    id!: number;
+@Entity("buildings_rooms")
+export class BuildingRoom {
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
     @Column({ name: "room_number" })
     roomNumber!: string;

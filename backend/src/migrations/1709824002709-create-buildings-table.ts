@@ -8,46 +8,42 @@ export class CreateBuildingsTable1709824002709 implements MigrationInterface {
                 columns: [
                     {
                         name: "id",
-                        type: "varchar",
+                        type: "int",
                         isPrimary: true,
-                        generationStrategy: "uuid"
+                        isGenerated: true,
+                        generationStrategy: "increment"
                     },
                     {
-                        name: "name",
+                        name: "room_number",
                         type: "varchar",
+                        length: "10",
+                        isNullable: false
                     },
                     {
-                        name: "start_room",
+                        name: "building_name",
                         type: "varchar",
+                        length: "10",
+                        isNullable: false
                     },
                     {
-                        name: "end_room", 
+                        name: "tenants",
                         type: "varchar",
+                        length: "255",
+                        isNullable: true,
+                        default: null
                     },
                     {
-                        name: "created_at",
-                        type: "timestamp",
-                        default: "now()",
-                    },
-                    {
-                        name: "updated_at",
-                        type: "timestamp",
-                        default: "now()",
+                        name: "status",
+                        type: "enum",
+                        enum: ["available", "occupied", "maintenance"],
+                        default: "'available'"
                     }
                 ]
             }),
             true
         );
 
-        // Insert initial building data
-        await queryRunner.query(`
-            INSERT INTO buildings (id, name, start_room, end_room) VALUES
-            (uuid(), 'A', '9101', '9025'),
-            (uuid(), 'B', '8101', '8025'),
-            (uuid(), 'C', '7101', '7025'),
-            (uuid(), 'E', '5101', '5025'),
-            (uuid(), 'F', '1101', '1025')
-        `);
+        // Initial building data with rooms will be added through seed_buildings.sql
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

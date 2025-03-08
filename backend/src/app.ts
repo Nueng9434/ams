@@ -7,54 +7,38 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import tenantRoutes from './routes/tenant.routes';
 import buildingRoutes from './routes/building.routes';
-import { initializeDatabase } from './config/database';
+import sessionRoutes from './routes/session.routes';
 import path from 'path';
 
 // Load environment variables
 dotenv.config();
 
-// Create app instance
-const createApp = async () => {
-  // Initialize database connection before setting up routes
-  await initializeDatabase();
+const app = express();
 
-  const expressApp = express();
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-  // Middleware
-  expressApp.use(cors());
-  expressApp.use(express.json());
+// Static files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-  // Static files
-  expressApp.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/buildings', buildingRoutes);
+app.use('/api/sessions', sessionRoutes);
 
-  // Routes
-  expressApp.use('/api/auth', authRoutes);
-  expressApp.use('/api/users', userRoutes);
-  expressApp.use('/api/tenants', tenantRoutes);
-  expressApp.use('/api/buildings', buildingRoutes);
+// Error handling
+app.use(errorHandler);
 
-  // Error handling
-  expressApp.use(errorHandler);
-
-  // Base route for API health check
-  expressApp.get('/api/health', (req, res) => {
-    res.json({ 
-      status: 'success',
-      message: 'API is running',
-      timestamp: new Date().toISOString()
-    });
+// Base route for API health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'success',
+    message: 'API is running',
+    timestamp: new Date().toISOString()
   });
-
-  return expressApp;
-};
-
-const app = express(); // Main app instance
-createApp().then(initializedApp => {
-  Object.assign(app, initializedApp);
-}).catch(error => {
-  console.error('Failed to initialize app:', error);
-  process.exit(1);
 });
-
 
 export default app;

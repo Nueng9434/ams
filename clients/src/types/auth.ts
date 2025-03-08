@@ -17,6 +17,7 @@ export interface AuthResponse {
   data: {
     user: User;
     token: string;
+    sessionId: number;
   };
 }
 

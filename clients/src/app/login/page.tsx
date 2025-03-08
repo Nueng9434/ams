@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <main className="login-container">
       <section className="test-section">
-        <h2 className="test-text">Test</h2>
+        <h2 className="test-text">AMS</h2>
       </section>
 
       <section className="login-section">

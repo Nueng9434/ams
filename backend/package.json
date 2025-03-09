@@ -9,7 +9,9 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "ts-node src/config/seed.ts"
+    "seed": "ts-node src/config/seed.ts",
+    "typeorm": "typeorm",
+    "typeorm:migrate": "typeorm migration:run -d src/config/database.ts"
   },
   "keywords": [],
   "author": "",

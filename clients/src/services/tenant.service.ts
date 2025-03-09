@@ -14,6 +14,7 @@ export interface TenantType {
     reservationEndDate?: Date;
     createdAt?: Date;
     updatedAt?: Date;
+    roomId?: number;
 }
 
 export const tenantService = {

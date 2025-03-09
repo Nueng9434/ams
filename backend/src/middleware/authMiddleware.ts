@@ -5,6 +5,7 @@ interface JwtPayload {
   userId: number;
   username: string;
   role: 'admin' | 'employee';
+  sessionId: number;
 }
 
 interface AuthRequest extends Request {

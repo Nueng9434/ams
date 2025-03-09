@@ -3,6 +3,7 @@ import { User } from '../models/user.model';
 import { Tenant } from '../models/tenant.model';
 import { Building } from '../models/building.model';
 import { BuildingRoom } from '../models/building-room.model';
+import { UserSession } from '../models/user-session.model';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -17,7 +18,7 @@ const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE || 'ams',
   synchronize: false, // Disable auto-sync to use migrations
   logging: process.env.NODE_ENV === 'development',
-  entities: [User, Tenant, Building, BuildingRoom],
+  entities: [User, Tenant, Building, BuildingRoom, UserSession],
   migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
   migrationsRun: true, // Automatically run migrations
   subscribers: [],

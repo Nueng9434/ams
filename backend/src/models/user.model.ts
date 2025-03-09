@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from 'typeorm';
+import { UserSession } from './user-session.model';
 import bcrypt from 'bcrypt';
 
 @Entity('users')
@@ -33,6 +34,9 @@ export class User extends BaseEntity {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @OneToMany(() => UserSession, session => session.user)
+  sessions!: UserSession[];
 
   async hashPassword() {
     if (this.password) {

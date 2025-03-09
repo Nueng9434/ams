@@ -45,32 +45,7 @@ export function SessionsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 mb-4">
-        <div>
-          <label htmlFor="startDate" className="block text-sm font-medium mb-1">
-            Start Date
-          </label>
-          <Input
-            type="datetime-local"
-            id="startDate"
-            value={startDate}
-  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)}
-            className="w-48"
-          />
-        </div>
-        <div>
-          <label htmlFor="endDate" className="block text-sm font-medium mb-1">
-            End Date
-          </label>
-          <Input
-            type="datetime-local"
-            id="endDate"
-            value={endDate}
-  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)}
-            className="w-48"
-          />
-        </div>
-      </div>
+    
 
       <Table>
         <TableHeader>

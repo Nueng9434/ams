@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { getAllBuildings, getBuildingById } from "../controllers/building.controller";
+import { getAllBuildings, getBuildingById, getAllRooms } from "../controllers/building.controller";
 import { authMiddleware, AuthRequest } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -13,6 +13,14 @@ router.use((req, res, next) => {
 router.get("/", (req: AuthRequest, res: Response) => {
     getAllBuildings(req, res).catch(err => {
         console.error('Error getting buildings:', err);
+        res.status(500).json({ message: "Internal server error" });
+    });
+});
+
+// Get all rooms with details
+router.get("/rooms", (req: AuthRequest, res: Response) => {
+    getAllRooms(req, res).catch(err => {
+        console.error('Error getting rooms:', err);
         res.status(500).json({ message: "Internal server error" });
     });
 });

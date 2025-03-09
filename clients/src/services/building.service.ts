@@ -1,5 +1,14 @@
 import api from './api';
 
+export interface Room {
+    id: number;
+    roomNumber: string;
+    buildingName: string;
+    tenants: any | null;
+    status: 'available' | 'occupied' | 'maintenance';
+    displayName: string;
+}
+
 export interface Building {
     id: string;
     name: string;
@@ -13,6 +22,11 @@ export interface Building {
 }
 
 export class BuildingService {
+    static async getAllRooms(): Promise<Room[]> {
+        const response = await api.get('/buildings/rooms');
+        return response.data;
+    }
+
     static async getAllBuildings(): Promise<Building[]> {
         const response = await api.get('/buildings');
         return response.data;

@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Building } from "./building.model";
 
 @Entity("tenants")
 export class Tenant {
@@ -37,6 +38,13 @@ export class Tenant {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @Column({ name: "room_id", nullable: true })
+    roomId?: number;
+
+    @ManyToOne(() => Building)
+    @JoinColumn({ name: "room_id" })
+    room?: Building;
 
     @UpdateDateColumn()
     updatedAt!: Date;

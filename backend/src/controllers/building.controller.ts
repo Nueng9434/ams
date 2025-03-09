@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../config/database";
 
+interface RoomDetailData {
+    id: number;
+    room_number: string;
+    building_name: string;
+    tenants: string | null;
+    status: 'available' | 'occupied' | 'maintenance';
+}
+
 interface RoomData {
     room_number: string;
     building_name: string;
@@ -57,6 +65,33 @@ export const getAllBuildings = async (req: Request, res: Response) => {
         res.status(500).json({ 
             message: "Error fetching buildings", 
             error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+    }
+};
+
+export const getAllRooms = async (req: Request, res: Response) => {
+    try {
+        const rooms = await AppDataSource.query<RoomDetailData[]>(`
+            SELECT id, room_number, building_name, tenants, status
+            FROM buildings
+            ORDER BY building_name, room_number
+        `);
+
+        const formattedRooms = rooms.map(room => ({
+            id: room.id,
+            roomNumber: room.room_number,
+            buildingName: room.building_name,
+            tenants: room.tenants ? JSON.parse(room.tenants) : null,
+            status: room.status,
+            displayName: `${room.building_name} - ${room.room_number}`
+        }));
+
+        res.json(formattedRooms);
+    } catch (error: unknown) {
+        console.error('Error in getAllRooms:', error);
+        res.status(500).json({
+            message: "Error fetching rooms",
+            error: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 };

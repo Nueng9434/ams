@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Modal,
     Button,
@@ -8,12 +8,14 @@ import {
     DatePicker,
     Select,
     Upload,
-    message
+    message,
+    Tag
 } from 'antd';
 import { UploadOutlined, UserOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import type { TenantType } from '@/services/tenant.service';
 import { tenantService } from '@/services/tenant.service';
+import { BuildingService, Room } from '@/services/building.service';
 
 interface TenantFormProps {
     visible: boolean;
@@ -37,7 +39,61 @@ export const TenantForm: React.FC<TenantFormProps> = ({
     const [tenantType, setTenantType] = useState<'R' | 'C' | null>(null);
     const [showTypeModal, setShowTypeModal] = useState(initialData ? false : visible);
     const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [loadingRooms, setLoadingRooms] = useState(false);
+    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch rooms when form opens
+    useEffect(() => {
+        if (visible) {
+            fetchRooms();
+        }
+    }, [visible]);
+
+    const fetchRooms = async () => {
+        try {
+            setLoadingRooms(true);
+            const roomsData = await BuildingService.getAllRooms();
+            setRooms(roomsData);
+        } catch (error) {
+            console.error('Error fetching rooms:', error);
+            message.error('ไม่สามารถดึงข้อมูลห้องได้');
+        } finally {
+            setLoadingRooms(false);
+        }
+    };
+
+    const handleRoomSelect = (roomId: number) => {
+        const room = rooms.find(r => r.id === roomId);
+        if (room) {
+            setSelectedRoom(room);
+            if (room.tenants && tenantType === 'C') {
+                // If selecting a reserved room for contract
+                const tenant = room.tenants;
+                form.setFieldsValue({
+                    title: tenant.title,
+                    fullName: tenant.fullName,
+                    phoneNumber: tenant.phoneNumber,
+                    idCardNumber: tenant.idCardNumber,
+                    address: tenant.address
+                });
+            }
+        }
+    };
+
+    const getRoomTagColor = (status: string) => {
+        switch (status) {
+            case 'available':
+                return 'success';
+            case 'occupied':
+                return 'error';
+            case 'maintenance':
+                return 'warning';
+            default:
+                return 'default';
+        }
+    };
 
     // Effect to handle form data when modal opens
     React.useEffect(() => {
@@ -96,6 +152,11 @@ export const TenantForm: React.FC<TenantFormProps> = ({
             setLoading(true);
             const values = await form.validateFields();
             
+            if (!selectedRoom) {
+                message.error('กรุณาเลือกห้อง');
+                return;
+            }
+
             const formData = new FormData();
             Object.keys(values).forEach(key => {
                 if (key !== 'document' && values[key] !== undefined) {
@@ -103,7 +164,8 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                 }
             });
 
-            // Add tenant type
+            // Add room and tenant type
+            formData.append('roomId', selectedRoom.id.toString());
             formData.append('tenantType', tenantType || initialData?.tenantType || '');
 
             // Add profile image if exists
@@ -174,6 +236,47 @@ export const TenantForm: React.FC<TenantFormProps> = ({
                     form={form}
                     layout="vertical"
                 >
+                    <Form.Item
+                        label="เลือกห้อง"
+                        required
+                        className="col-span-2"
+                    >
+                        <Select
+                            showSearch
+                            placeholder="เลือกห้อง"
+                            loading={loadingRooms}
+                            onChange={handleRoomSelect}
+                            value={selectedRoom?.id}
+                            optionFilterProp="children"
+                            className="w-full"
+                        >
+                            {rooms.map(room => {
+                                const isAvailable = room.status === 'available';
+                                const isReserved = room.status === 'occupied' && room.tenants?.tenantType === 'R';
+                                const isDisabled = (tenantType === 'R' && !isAvailable) || 
+                                                 (tenantType === 'C' && !isAvailable && !isReserved) ||
+                                                 room.status === 'maintenance';
+                                
+                                return (
+                                    <Select.Option 
+                                        key={room.id} 
+                                        value={room.id}
+                                        disabled={isDisabled}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <span>{room.displayName}</span>
+                                            <Tag color={getRoomTagColor(room.status)}>
+                                                {room.status === 'available' ? 'ว่าง' : 
+                                                 room.status === 'occupied' ? (room.tenants?.tenantType === 'R' ? 'จอง' : 'ทำสัญญา') : 
+                                                 'ซ่อมบำรุง'}
+                                            </Tag>
+                                        </div>
+                                    </Select.Option>
+                                );
+                            })}
+                        </Select>
+                    </Form.Item>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <div className="mb-4 flex justify-center">

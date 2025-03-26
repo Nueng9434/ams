@@ -6,7 +6,7 @@ import { initializeDatabase } from './config/database';
 // Load environment variables
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Initialize the database connection
 const startServer = async () => {

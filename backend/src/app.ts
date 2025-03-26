@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import { AppDataSource } from './config/database';
 
 // Import routes
+import authRoutes from './routes/auth.route';
 import tenantRoutes from './routes/tenant.route';
 import buildingRoutes from './routes/building.route';
 import roomRoutes from './routes/room.route';
@@ -34,6 +35,7 @@ class App {
     });
 
     // API routes
+    this.app.use('/api/auth', authRoutes);
     this.app.use('/api/tenants', tenantRoutes);
     this.app.use('/api/buildings', buildingRoutes);
     this.app.use('/api/rooms', roomRoutes);

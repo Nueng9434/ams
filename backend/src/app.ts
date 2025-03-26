@@ -1,44 +1,66 @@
-import 'reflect-metadata';
-import express from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { errorHandler } from './middleware/errorHandler';
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import tenantRoutes from './routes/tenant.routes';
-import buildingRoutes from './routes/building.routes';
-import sessionRoutes from './routes/session.routes';
-import path from 'path';
+import 'reflect-metadata';
+import { AppDataSource } from './config/database';
 
-// Load environment variables
-dotenv.config();
+// Import routes
+import authRoutes from './routes/auth.route';
+import tenantRoutes from './routes/tenant.route';
+import buildingRoutes from './routes/building.route';
+import roomRoutes from './routes/room.route';
+import transactionRoutes from './routes/transaction.route';
+import utilityRoutes from './routes/utility.route';
+import employeeRoutes from './routes/employee.route';
 
-const app = express();
+class App {
+  public app: Application;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+  constructor() {
+    this.app = express();
+    this.config();
+    this.routes();
+    this.errorHandler();
+  }
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  private config(): void {
+    // Middleware
+    this.app.use(cors());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
+  }
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/tenants', tenantRoutes);
-app.use('/api/buildings', buildingRoutes);
-app.use('/api/sessions', sessionRoutes);
+  private routes(): void {
+    this.app.get('/', (req: Request, res: Response) => {
+      res.send('AMS API is running');
+    });
 
-// Error handling
-app.use(errorHandler);
+    // API routes
+    this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/tenants', tenantRoutes);
+    this.app.use('/api/buildings', buildingRoutes);
+    this.app.use('/api/rooms', roomRoutes);
+    this.app.use('/api/transactions', transactionRoutes);
+    this.app.use('/api/utilities', utilityRoutes);
+    this.app.use('/api/employees', employeeRoutes);
+  }
 
-// Base route for API health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'success',
-    message: 'API is running',
-    timestamp: new Date().toISOString()
-  });
-});
+  private errorHandler(): void {
+    // 404 handler
+    this.app.use((req: Request, res: Response) => {
+      res.status(404).json({
+        message: 'Route not found',
+      });
+    });
 
-export default app;
+    // Global error handler
+    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      console.error(err.stack);
+      res.status(500).json({
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      });
+    });
+  }
+}
+
+export default new App().app;

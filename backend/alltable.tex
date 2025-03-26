@@ -1,0 +1,103 @@
+-- Create the AMS database
+CREATE DATABASE IF NOT EXISTS ams;
+USE ams;
+
+-- Table for Tenants
+CREATE TABLE tenants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prefix VARCHAR(20),
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    address TEXT,
+    profile_image_path VARCHAR(255)
+);
+
+-- Table for Buildings
+CREATE TABLE buildings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_number VARCHAR(10) NOT NULL,
+    building_name VARCHAR(10) NOT NULL,
+    tenants VARCHAR(255) DEFAULT NULL,
+    status ENUM('available', 'occupied', 'maintenance') NOT NULL DEFAULT 'available',
+    air_conditioning_rooms INT DEFAULT 0,
+    fan_rooms INT DEFAULT 0
+);
+
+-- Table for Rooms
+CREATE TABLE rooms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    building_id INT,
+    floor_number INT NOT NULL,
+    room_number VARCHAR(10) NOT NULL,
+    status ENUM('vacant', 'booked', 'occupied') NOT NULL DEFAULT 'vacant',
+    current_tenant_id INT,
+    booked_tenant_id INT,
+    booking_start_date DATE,
+    booking_end_date DATE,
+    contract_file_path VARCHAR(255),
+    FOREIGN KEY (building_id) REFERENCES buildings(id),
+    FOREIGN KEY (current_tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (booked_tenant_id) REFERENCES tenants(id)
+);
+
+-- Table for Additional Services
+CREATE TABLE additional_services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    service_name VARCHAR(100) NOT NULL,
+    service_price DECIMAL(10,2) NOT NULL
+);
+
+-- Table for Room Additional Services
+CREATE TABLE room_additional_services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT,
+    service_id INT,
+    FOREIGN KEY (room_id) REFERENCES rooms(id),
+    FOREIGN KEY (service_id) REFERENCES additional_services(id)
+);
+
+-- Table for Financial Transactions
+CREATE TABLE financial_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT,
+    tenant_id INT,
+    transaction_type ENUM('rent', 'booking', 'additional_service') NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    transaction_date DATETIME NOT NULL,
+    payment_method ENUM('cash', 'other') NOT NULL,
+    invoice_number VARCHAR(50),
+    receipt_file_path VARCHAR(255),
+    FOREIGN KEY (room_id) REFERENCES rooms(id),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+);
+
+-- Table for Utilities (Water and Electricity)
+CREATE TABLE utilities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT,
+    month INT NOT NULL,
+    year INT NOT NULL,
+    previous_water_reading DECIMAL(10,2),
+    current_water_reading DECIMAL(10,2),
+    water_cost DECIMAL(10,2),
+    previous_electricity_reading DECIMAL(10,2),
+    current_electricity_reading DECIMAL(10,2),
+    electricity_cost DECIMAL(10,2),
+    FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
+
+-- Table for Employee Roles
+CREATE TABLE employee_roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL,
+    description TEXT
+);
+
+-- Table for Employees
+CREATE TABLE employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role_id INT,
+    FOREIGN KEY (role_id) REFERENCES employee_roles(id)
+);

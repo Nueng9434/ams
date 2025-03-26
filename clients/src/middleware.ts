@@ -1,38 +1,46 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Add paths that don't require authentication
-const publicPaths = ['/login', '/']
-
+// This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-  const isPublicPath = publicPaths.includes(request.nextUrl.pathname)
-
-  if (!token && !isPublicPath) {
-    // Redirect to login if accessing protected route without token
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
+  // Public paths that don't require authentication
+  const publicPaths = ['/login', '/register'];
+  
+  // Check if the pathname is a public path
+  const isPublicPath = publicPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+  
+  // Get the token from cookies or localStorage (in client-side)
+  const token = request.cookies.get('token')?.value;
+  
+  // If the path is not public and there's no token, redirect to login
+  if (!isPublicPath && !token) {
+    // If accessing dashboard without token, redirect to login
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
-
-  if (token && isPublicPath) {
-    // Redirect to dashboard if accessing login with valid token
-    const dashboardUrl = new URL('/dashboard', request.url)
-    return NextResponse.redirect(dashboardUrl)
+  
+  // If already logged in and trying to access login page, redirect to dashboard
+  if (isPublicPath && token) {
+    const dashboardUrl = new URL('/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
-
-  return NextResponse.next()
+  
+  // Continue with the request
+  return NextResponse.next();
 }
 
-// Configure which routes to run middleware on
+// See "Matching Paths" below to learn more
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
-}
+};

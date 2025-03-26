@@ -1,51 +1,34 @@
 import { DataSource } from 'typeorm';
-import { User } from '../models/user.model';
-import { Tenant } from '../models/tenant.model';
-import { Building } from '../models/building.model';
-import { BuildingRoom } from '../models/building-room.model';
-import { UserSession } from '../models/user-session.model';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config();
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const AppDataSource = new DataSource({
+export const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
+  port: parseInt(process.env.DB_PORT || '3306'),
   username: process.env.DB_USERNAME || 'root',
   password: process.env.DB_PASSWORD || '1235',
   database: process.env.DB_DATABASE || 'ams',
-  synchronize: false, // Disable auto-sync to use migrations
-  logging: process.env.NODE_ENV === 'development',
-  entities: [User, Tenant, Building, BuildingRoom, UserSession],
-  migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
-  migrationsRun: true, // Automatically run migrations
-  subscribers: [],
+  synchronize: true,
+  logging: process.env.NODE_ENV !== 'production',
+  entities: [path.join(__dirname, '../models/entities/**/*.entity.{js,ts}')],
+  migrations: [path.join(__dirname, '../migrations/**/*.{js,ts}')],
+  subscribers: [path.join(__dirname, '../subscribers/**/*.{js,ts}')],
 });
 
-export { AppDataSource };
-
-export const initializeDatabase = async () => {
+// Function to initialize the database connection
+export const initializeDatabase = async (): Promise<DataSource> => {
   try {
-    await AppDataSource.initialize();
-    console.log('Database connection initialized');
-    
-    // Check and create admin user if not exists
-    const existingAdmin = await User.findByUsername('admin');
-    if (!existingAdmin) {
-      await User.createUser({
-        username: 'admin',
-        password: 'admin123',
-        name: 'Administrator',
-        email: 'admin@example.com',
-        role: 'admin',
-        isActive: true
-      });
-      console.log('Admin user created successfully');
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+      console.log('Database connection has been established successfully.');
     }
+    return AppDataSource;
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('Unable to connect to the database:', error);
     throw error;
   }
 };

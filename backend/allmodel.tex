@@ -1,0 +1,255 @@
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  OneToMany, 
+  ManyToOne, 
+  JoinColumn 
+} from 'typeorm';
+
+@Entity('tenants')
+export class Tenant {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ['mr', 'mrs', 'miss', 'other'], 
+    nullable: true 
+  })
+  prefix: string;
+
+  @Column({ length: 100 })
+  firstName: string;
+
+  @Column({ length: 100 })
+  lastName: string;
+
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  profileImagePath: string;
+
+  @OneToMany(() => Room, room => room.currentTenant)
+  currentRooms: Room[];
+
+  @OneToMany(() => Room, room => room.bookedTenant)
+  bookedRooms: Room[];
+
+  @OneToMany(() => FinancialTransaction, transaction => transaction.tenant)
+  transactions: FinancialTransaction[];
+}
+
+@Entity('buildings')
+export class Building {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 10 })
+  roomNumber: string;
+
+  @Column({ length: 10 })
+  buildingName: string;
+
+  @Column({ type: 'text', nullable: true })
+  tenants: string;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ['available', 'occupied', 'maintenance'], 
+    default: 'available' 
+  })
+  status: string;
+
+  @Column({ default: 0 })
+  airConditioningRooms: number;
+
+  @Column({ default: 0 })
+  fanRooms: number;
+
+  @OneToMany(() => Room, room => room.building)
+  rooms: Room[];
+}
+
+@Entity('rooms')
+export class Room {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Building, building => building.rooms)
+  @JoinColumn({ name: 'building_id' })
+  building: Building;
+
+  @Column()
+  floorNumber: number;
+
+  @Column({ length: 10 })
+  roomNumber: string;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ['vacant', 'booked', 'occupied'], 
+    default: 'vacant' 
+  })
+  status: string;
+
+  @ManyToOne(() => Tenant, tenant => tenant.currentRooms, { nullable: true })
+  @JoinColumn({ name: 'current_tenant_id' })
+  currentTenant: Tenant;
+
+  @ManyToOne(() => Tenant, tenant => tenant.bookedRooms, { nullable: true })
+  @JoinColumn({ name: 'booked_tenant_id' })
+  bookedTenant: Tenant;
+
+  @Column({ type: 'date', nullable: true })
+  bookingStartDate: Date;
+
+  @Column({ type: 'date', nullable: true })
+  bookingEndDate: Date;
+
+  @Column({ nullable: true })
+  contractFilePath: string;
+
+  @OneToMany(() => RoomAdditionalService, service => service.room)
+  additionalServices: RoomAdditionalService[];
+
+  @OneToMany(() => FinancialTransaction, transaction => transaction.room)
+  transactions: FinancialTransaction[];
+
+  @OneToMany(() => Utility, utility => utility.room)
+  utilities: Utility[];
+}
+
+@Entity('additional_services')
+export class AdditionalService {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 100 })
+  serviceName: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  servicePrice: number;
+
+  @OneToMany(() => RoomAdditionalService, roomService => roomService.service)
+  roomServices: RoomAdditionalService[];
+}
+
+@Entity('room_additional_services')
+export class RoomAdditionalService {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Room, room => room.additionalServices)
+  @JoinColumn({ name: 'room_id' })
+  room: Room;
+
+  @ManyToOne(() => AdditionalService, service => service.roomServices)
+  @JoinColumn({ name: 'service_id' })
+  service: AdditionalService;
+}
+
+@Entity('financial_transactions')
+export class FinancialTransaction {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Room, room => room.transactions)
+  @JoinColumn({ name: 'room_id' })
+  room: Room;
+
+  @ManyToOne(() => Tenant, tenant => tenant.transactions)
+  @JoinColumn({ name: 'tenant_id' })
+  tenant: Tenant;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ['rent', 'booking', 'additional_service'] 
+  })
+  transactionType: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  amount: number;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  transactionDate: Date;
+
+  @Column({ 
+    type: 'enum', 
+    enum: ['cash', 'other'], 
+    default: 'cash' 
+  })
+  paymentMethod: string;
+
+  @Column({ length: 50, unique: true })
+  invoiceNumber: string;
+
+  @Column({ nullable: true })
+  receiptFilePath: string;
+}
+
+@Entity('utilities')
+export class Utility {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Room, room => room.utilities)
+  @JoinColumn({ name: 'room_id' })
+  room: Room;
+
+  @Column()
+  month: number;
+
+  @Column()
+  year: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  previousWaterReading: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  currentWaterReading: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  waterCost: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  previousElectricityReading: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  currentElectricityReading: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  electricityCost: number;
+}
+
+@Entity('employee_roles')
+export class EmployeeRole {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 50 })
+  roleName: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @OneToMany(() => Employee, employee => employee.role)
+  employees: Employee[];
+}
+
+@Entity('employees')
+export class Employee {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 100 })
+  firstName: string;
+
+  @Column({ length: 100 })
+  lastName: string;
+
+  @ManyToOne(() => EmployeeRole, role => role.employees)
+  @JoinColumn({ name: 'role_id' })
+  role: EmployeeRole;
+}

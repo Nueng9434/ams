@@ -1,158 +1,97 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { AuthRequest } from '../middleware/authMiddleware';
-import { User } from '../models/user.model';
-import { UserSession } from '../models/user-session.model';
-import { IsNull } from 'typeorm';
-import { AppDataSource } from '../config/database';
+import { Request, Response } from 'express';
+import AuthService from '../services/auth.service';
 
-const endPreviousSessions = async (userId: number): Promise<void> => {
-  const sessionRepository = AppDataSource.getRepository(UserSession);
-  const activeSessions = await sessionRepository.find({
-    where: {
-      userId,
-      logoutTime: IsNull()
-    }
-  });
+export class AuthController {
+  /**
+   * Register a new user
+   * @route POST /api/auth/register
+   */
+  public async register(req: Request, res: Response): Promise<void> {
+    try {
+      const userData = req.body;
+      const user = await AuthService.register(userData);
 
-  for (const session of activeSessions) {
-    session.endSession();
-    await sessionRepository.save(session);
-  }
-};
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
 
-export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { username, password } = req.body;
-
-    const user = await User.findByUsername(username);
-
-    if (!user || !user.isActive) {
-      res.status(401).json({
-        status: 'error',
-        message: 'Invalid credentials',
+      res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        data: userWithoutPassword
       });
-      return;
-    }
-
-    const isValidPassword = await user.validatePassword(password);
-    if (!isValidPassword) {
-      res.status(401).json({
-        status: 'error',
-        message: 'Invalid credentials',
-      });
-      return;
-    }
-
-    // End any existing active sessions for this user
-    await endPreviousSessions(user.id);
-
-    // Create new session
-    const sessionRepository = AppDataSource.getRepository(UserSession);
-    const userAgent = req.headers['user-agent'];
-    const session = UserSession.create({
-      userId: user.id,
-      ipAddress: req.ip || '0.0.0.0',
-      userAgent: userAgent || 'Unknown'
-    });
-    await sessionRepository.save(session);
-
-    const secret = process.env.JWT_SECRET || 'your-jwt-secret-key-here';
-    const token = jwt.sign(
-      { 
-        userId: user.id,
-        username: user.username,
-        role: user.role,
-        sessionId: session.id
-      },
-      secret,
-      { expiresIn: '1d' }
-    );
-
-    const { password: _, ...userData } = user;
-    res.json({
-      status: 'success',
-      data: {
-        user: userData,
-        token,
-        sessionId: session.id
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const logout = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (!req.user || !req.user.userId) {
+    } catch (error: any) {
       res.status(400).json({
-        status: 'error',
-        message: 'No user found in request',
+        success: false,
+        message: error.message || 'Failed to register user',
+        error: error.message
       });
-      return;
     }
+  }
 
-    // Get active session for user
-    const sessionRepository = AppDataSource.getRepository(UserSession);
-    const session = await sessionRepository.findOne({
-      where: {
-        userId: req.user.userId,
-        logoutTime: IsNull()
+  /**
+   * Login a user
+   * @route POST /api/auth/login
+   */
+  public async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        res.status(400).json({
+          success: false,
+          message: 'Username and password are required'
+        });
+        return;
       }
-    });
 
-    if (!session) {
-      // If no active session, just return success
-      res.json({
-        status: 'success',
-        message: 'No active session found',
+      const result = await AuthService.login(username, password);
+
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          user: result.user,
+          token: result.token
+        }
       });
-      return;
-    }
-
-    // End the session
-    session.endSession();
-    await sessionRepository.save(session);
-
-    res.json({
-      status: 'success',
-      message: 'Logged out successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const user = req.user;
-    
-    if (!user) {
+    } catch (error: any) {
       res.status(401).json({
-        status: 'error',
-        message: 'User not authenticated',
+        success: false,
+        message: error.message || 'Authentication failed',
+        error: error.message
       });
-      return;
     }
-
-    const userDetails = await User.findById(user.userId);
-    if (!userDetails) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    const { password, ...userData } = userDetails;
-    res.json({
-      status: 'success',
-      data: {
-        user: userData,
-      },
-    });
-  } catch (error) {
-    next(error);
   }
-};
+
+  /**
+   * Get current user info
+   * @route GET /api/auth/me
+   */
+  public async getCurrentUser(req: Request, res: Response): Promise<void> {
+    try {
+      // User will be available from auth middleware
+      const user = req.user;
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: user
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to get user info',
+        error: error.message
+      });
+    }
+  }
+}
+
+export default new AuthController();

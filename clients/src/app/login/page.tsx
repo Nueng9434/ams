@@ -1,15 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import authService, { LoginCredentials } from '@/services/auth.service';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    // Check if user is coming from registration page
+    const registered = searchParams.get('registered');
+    if (registered === 'true') {
+      setSuccess('Registration successful! Please login with your new account.');
+    }
+  }, [searchParams]);
   
   const { 
     register, 
@@ -45,6 +55,12 @@ export default function LoginPage() {
         {error && (
           <div className="p-3 bg-red-100 text-red-700 rounded-md">
             {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="p-3 bg-green-100 text-green-700 rounded-md">
+            {success}
           </div>
         )}
         
@@ -91,6 +107,13 @@ export default function LoginPage() {
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
+          </div>
+          
+          <div className="text-center text-sm">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-blue-600 hover:text-blue-700">
+              Register here
+            </Link>
           </div>
         </form>
       </div>

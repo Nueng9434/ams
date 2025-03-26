@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
   // Public paths that don't require authentication
-  const publicPaths = ['/login'];
+  const publicPaths = ['/login', '/register'];
   
   // Check if the pathname is a public path
   const isPublicPath = publicPaths.some(path => 

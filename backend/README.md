@@ -1,0 +1,61 @@
+# Apartment Management System (AMS) Backend
+
+ระบบจัดการที่พักอาศัย (Apartment Management System) API เขียนด้วย Node.js, Express, TypeScript และ TypeORM
+
+## โครงสร้างโปรเจค
+
+```
+backend/
+├── src/
+│   ├── app.ts                # Express application setup
+│   ├── index.ts              # Entry point ของแอพพลิเคชัน
+│   ├── config/               # การตั้งค่าต่างๆ
+│   ├── controllers/          # จัดการ business logic
+│   ├── models/
+│   │   └── entities/         # TypeORM entities
+│   ├── routes/               # Express routes
+│   ├── services/             # Service layer
+│   ├── utils/                # Helper functions
+│   └── middlewares/          # Middleware functions
+```
+
+## การติดตั้ง
+
+```bash
+# ติดตั้ง dependencies
+npm install
+
+# ชั้งค่า environment variables
+# แก้ไขไฟล์ .env ตามความเหมาะสม
+
+# สร้างฐานข้อมูล
+# รันคำสั่ง SQL จากไฟล์ alltable.tex
+
+# เริ่มต้นเซิร์ฟเวอร์ในโหมดพัฒนา
+npm run dev
+```
+
+## คำสั่งใช้งาน
+
+```bash
+# เริ่มต้นเซิร์ฟเวอร์ในโหมดพัฒนา
+npm run dev
+
+# สร้าง build สำหรับนำไปใช้งานจริง
+npm run build
+
+# เริ่มต้นเซิร์ฟเวอร์จาก build
+npm start
+```
+
+## การเชื่อมต่อฐานข้อมูล
+
+ระบบใช้ MySQL เป็นฐานข้อมูล การเชื่อมต่อถูกกำหนดค่าในไฟล์ `src/config/database.ts` และใช้ค่าจากไฟล์ `.env`:
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=1235
+DB_DATABASE=ams
+```
